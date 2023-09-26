@@ -6,6 +6,8 @@ import { CustomerData } from "./interfaces/CustomerData"
 import { PaymentData } from "./interfaces/PaymentData"
 import { SnackData } from "./interfaces/SnackData"
 
+import CheckoutService from "./services/CheckoutService"
+
 dotenv.config()
 
 const app: Express = express()
@@ -46,6 +48,7 @@ app.get("/orders/:id", async (req: Request, res: Response) => {
     where: {
       id: +id,
     },
+    include: { customer: true, orderItems: { include: { snack: true } } },
   })
 
   if (!order) return res.status(404).send({ error: "Order not found" })
@@ -63,6 +66,11 @@ interface CheckoutRequest extends Request {
 
 app.post("/checkout", async (req: CheckoutRequest, res: Response) => {
   const { cart, customer, payment } = req.body
+
+  const checkoutService = new CheckoutService()
+  checkoutService.process(cart, customer, payment)
+
+  res.send({ message: "Checkout completed" })
 })
 
 app.listen(port, () => {
