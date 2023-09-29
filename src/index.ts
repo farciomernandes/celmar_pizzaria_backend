@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import dotenv from "dotenv"
 import express, { Express, Request, Response } from "express"
+import cors from "cors";
 
 import { CustomerData } from "./interfaces/CustomerData"
 import { PaymentData } from "./interfaces/PaymentData"
@@ -15,6 +16,7 @@ const port = process.env.PORT || 5000
 const prisma = new PrismaClient()
 
 app.use(express.json())
+app.use(cors())
 
 app.get("/", (req: Request, res: Response) => {
   const { message } = req.body
@@ -25,15 +27,15 @@ app.get("/", (req: Request, res: Response) => {
 })
 
 app.get("/snacks", async (req: Request, res: Response) => {
-  const { snack } = req.query
+  const { food } = req.query
 
-  if (!snack) return res.status(400).send({ error: "Snack is required" })
+  if (!food) return res.status(400).send({ error: "Snack is required" })
 
   // SELECT * FROM Snack WHERE snack = 'drink'
   const snacks = await prisma.snack.findMany({
     where: {
       snack: {
-        equals: snack as string,
+        equals: food as string,
       },
     },
   })
@@ -68,9 +70,9 @@ app.post("/checkout", async (req: CheckoutRequest, res: Response) => {
   const { cart, customer, payment } = req.body
 
   const checkoutService = new CheckoutService()
-  checkoutService.process(cart, customer, payment)
+  await checkoutService.process(cart, customer, payment);
+  return res.status(200).send({message: "Checkout completed"})
 
-  res.send({ message: "Checkout completed" })
 })
 
 app.listen(port, () => {
